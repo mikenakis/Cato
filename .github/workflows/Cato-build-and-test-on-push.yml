@@ -1,0 +1,52 @@
+name: build-and-test-on-push
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  the_job:
+
+    runs-on: ubuntu-latest
+    # runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 10
+
+    - name: GitHub Tag Bump
+      id: tag_bump
+      uses: anothrNick/github-tag-action@1.71.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        INITIAL_VERSION: 5.1.0
+        DEFAULT_BUMP: patch
+
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.200
+
+    - name: "Configuration 'Debug': build and run tests"
+      run: scripts/build.bash Configuration=Debug RunTests=Yes
+
+#    - name: "Configuration 'Develop': build"
+#      run: scripts/build.bash Configuration=Develop
+#
+#    - name: "Configuration 'Develop': publish"
+#      run: scripts/publish.bash Configuration=Develop ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
+
+    - name: "Configuration 'Release': build"
+      run: scripts/build.bash Configuration=Release
+
+    - name: "Configuration 'Release': publish"
+      run: scripts/publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}

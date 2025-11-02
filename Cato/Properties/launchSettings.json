@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Scripts": {
+      "commandName": "Project",
+      "workingDirectory": "$(SolutionDir)\\Cato Test\\web",
+      "notWorkingDirectory": "C:\\Users\\MBV\\Personal\\Documents\\digital-garden\\michael.gr-blaster-publish"
+    }
+  }
+}

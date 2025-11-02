@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/Cato Test/" />
+  <Folder Name="/Cato Test/web/">
+    <File Path="Cato Test/web/index.html" />
+  </Folder>
+  <Folder Name="/_Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path=".gitattributes" />
+    <File Path="AllCode.globalconfig" />
+    <File Path="AllProjects.proj.xml" />
+    <File Path="BannedApiAnalyzers.proj.xml" />
+    <File Path="Cato-README.md" />
+    <File Path="ProductionCode.globalconfig" />
+    <File Path="TestCode.globalconfig" />
+  </Folder>
+  <Folder Name="/_Solution Items/github/">
+    <File Path=".github/workflows/Cato-build-and-test-on-push.yml" />
+    <File Path=".github/workflows/Cato-publish-to-nuget-org.yml" />
+  </Folder>
+  <Project Path="Cato/Cato.csproj" />
+</Solution>

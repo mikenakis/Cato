@@ -1,0 +1,182 @@
+namespace Cato;
+
+using System.Collections.Immutable;
+using MikeNakis.Clio.Extensions;
+using MikeNakis.Kit;
+using MikeNakis.Kit.FileSystem;
+using static Microsoft.AspNetCore.Builder.DefaultFilesExtensions;
+using static Microsoft.AspNetCore.Builder.HostFilteringBuilderExtensions;
+using static Microsoft.AspNetCore.Builder.StaticFileExtensions;
+using static Microsoft.AspNetCore.Builder.UseExtensions;
+using static Microsoft.AspNetCore.Builder.WebSocketMiddlewareExtensions;
+using static Microsoft.AspNetCore.Hosting.HostingAbstractionsWebHostBuilderExtensions;
+using static Microsoft.AspNetCore.Http.SendFileResponseExtensions;
+using static Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions;
+using static MikeNakis.Kit.GlobalStatics;
+using AspBuilder = Microsoft.AspNetCore.Builder;
+using AspDepInj = Microsoft.Extensions.DependencyInjection;
+using AspHttp = Microsoft.AspNetCore.Http;
+using AspLog = Microsoft.Extensions.Logging;
+using AspLogDebug = Microsoft.Extensions.Logging.Debug;
+using Clio = MikeNakis.Clio;
+using Log = MikeNakis.Kit.Log;
+using Sys = System;
+using SysIo = System.IO;
+using SysNetWebSock = System.Net.WebSockets;
+using SysTask = System.Threading.Tasks;
+using SysText = System.Text;
+using SysThread = System.Threading;
+
+public sealed class CatoMain
+{
+	static void Main( string[] arguments )
+	{
+		Clio.ArgumentParser argumentParser = new();
+		Clio.IPositionalArgument<string> prefixArgument = argumentParser.AddStringPositionalWithDefault( "prefix", "http://localhost:8000/", "The host name and port to serve" );
+		Clio.IPositionalArgument<string> webRootArgument = argumentParser.AddStringPositionalWithDefault( "web-root", ".", "The directory containing the files to serve" );
+		if( !argumentParser.TryParse( arguments ) )
+		{
+			Sys.Environment.Exit( -1 );
+			return;
+		}
+		var webRoot = DirectoryPath.FromAbsoluteOrRelativePath( webRootArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
+		Sys.Console.WriteLine( $"Serving '{webRoot}'" );
+		Sys.Console.WriteLine( $"On '{prefixArgument.Value}'" );
+		AwaitableEvent awaitableEvent = new();
+		LoggingAction loggingAction = new LoggingAction( awaitableEvent.Trigger, "Change detected" );
+		using( Hysterator hysterator = new( Sys.TimeSpan.FromSeconds( 0.5 ), loggingAction.EntryPoint ) )
+		{
+			startFileSystemWatcher( webRoot, hysterator.Action );
+			startWebServer( webRoot, awaitableEvent.Awaitable );
+			Sys.Console.WriteLine( "Press [Enter] to terminate: " );
+			Sys.Console.ReadLine();
+		}
+	}
+
+	static SysIo.FileSystemWatcher startFileSystemWatcher( DirectoryPath directoryPath, Sys.Action waitableTaskTrigegr )
+	{
+		SysIo.FileSystemWatcher fileSystemWatcher = new();
+		fileSystemWatcher.Path = directoryPath.Path;
+		fileSystemWatcher.IncludeSubdirectories = true;
+		//fileSystemWatcher.Filter                = "*";
+		fileSystemWatcher.NotifyFilter = SysIo.NotifyFilters.FileName | //SysIo.NotifyFilters.Attributes | SysIo.NotifyFilters.LastAccess |
+				SysIo.NotifyFilters.DirectoryName | //
+				SysIo.NotifyFilters.Size |
+				SysIo.NotifyFilters.LastWrite |
+				SysIo.NotifyFilters.CreationTime |
+				SysIo.NotifyFilters.Security;
+		fileSystemWatcher.Changed += onFileSystemWatcherNormalEvent;
+		fileSystemWatcher.Created += onFileSystemWatcherNormalEvent;
+		fileSystemWatcher.Deleted += onFileSystemWatcherNormalEvent;
+		fileSystemWatcher.Error += onFileSystemWatcherErrorEvent;
+		fileSystemWatcher.Renamed += onFileSystemWatcherNormalEvent;
+		fileSystemWatcher.EnableRaisingEvents = true;
+		return fileSystemWatcher;
+
+		void onFileSystemWatcherNormalEvent( object sender, SysIo.FileSystemEventArgs e )
+		{
+			Assert( sender == fileSystemWatcher );
+			Log.Debug( $"{e.ChangeType} {e.FullPath}" );
+			waitableTaskTrigegr.Invoke();
+		}
+
+		void onFileSystemWatcherErrorEvent( object sender, SysIo.ErrorEventArgs e )
+		{
+			Assert( sender == fileSystemWatcher );
+			Log.Warn( $"{directoryPath}", e.GetException() );
+		}
+	}
+
+	static void startWebServer( DirectoryPath webRoot, Awaitable awaitable )
+	{
+		// from Microsoft Learn
+		//     https://learn.microsoft.com/en-us/aspnet/core/fundamentals/websockets?view=aspnetcore-9.0
+		// an alternative, but very similar, implementation is here:
+		//     https://www.tabsoverspaces.com/233883-simple-websocket-client-and-server-application-using-dotnet
+		AspBuilder.WebApplicationBuilder builder = AspBuilder.WebApplication.CreateBuilder( new AspBuilder.WebApplicationOptions() { WebRootPath = webRoot.Path } );
+		builder.WebHost.UseUrls( "http://localhost:8080" );
+		builder.Logging.Services.RemoveAll<AspLog.ILoggerProvider>();
+		builder.Logging.Services.TryAddEnumerable( AspDepInj.ServiceDescriptor.Singleton<AspLog.ILoggerProvider, AspLogDebug.DebugLoggerProvider>() );
+		AspBuilder.WebApplication app = builder.Build();
+		app.UseWebSockets();
+		app.UseHostFiltering();
+		app.UseDefaultFiles( new AspBuilder.DefaultFilesOptions() { DefaultFileNames = ImmutableArray.Create( "index.html" ) } );
+		app.UseStaticFiles( new AspBuilder.StaticFileOptions()
+		{
+			FileProvider = new MyFileProvider( webRoot.Path ),
+			RedirectToAppendTrailingSlash = true,
+			ServeUnknownFileTypes = true
+		} );
+		app.Use( async ( context, next ) =>
+		{
+			if( context.Request.Path == "/live-reload-websocket" )
+			{
+				await doWebSocket( context, awaitable );
+				return;
+			}
+			if( context.Request.Path == "/live-reload.js" )
+			{
+				await serveLiveReloadJs( context );
+				return;
+			}
+			await next( context );
+		} );
+		app.RunAsync();
+	}
+
+	static async SysTask.Task doWebSocket( AspHttp.HttpContext context, Awaitable awaitable )
+	{
+		if( !context.WebSockets.IsWebSocketRequest )
+		{
+			context.Response.StatusCode = AspHttp.StatusCodes.Status400BadRequest;
+			return;
+		}
+		Log.Debug( $"Connected: {context.Connection.RemoteIpAddress}:{context.Connection.RemotePort}" );
+		using( SysNetWebSock.WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync() )
+		{
+			_ = runReceiver( webSocket );
+			await runTransmitter( webSocket, awaitable );
+		}
+
+		// PEARL: a webSocket does not detect that it has been disconnected unless there is a read pending on it.
+		//     Thus, we have to have this method which keeps a pending read on the webSocket even though we have no
+		//     use for reading anything from it.
+		static async SysTask.Task runReceiver( SysNetWebSock.WebSocket webSocket )
+		{
+			byte[] buffer = new byte[16];
+			while( true )
+			{
+				SysNetWebSock.WebSocketReceiveResult result = await webSocket.ReceiveAsync( buffer, SysThread.CancellationToken.None );
+				if( result.MessageType == SysNetWebSock.WebSocketMessageType.Close )
+				{
+					Log.Debug( $"Socket closed: {result.CloseStatus} {result.CloseStatusDescription}" );
+					break;
+				}
+			}
+		}
+
+		static async SysTask.Task runTransmitter( SysNetWebSock.WebSocket webSocket, Awaitable awaitable )
+		{
+			while( true )
+			{
+				await awaitable.Invoke();
+				Log.Debug( "WebSocket server received change event." );
+				if( webSocket.State != SysNetWebSock.WebSocketState.Open )
+				{
+					Log.Debug( $"WebSocket state is {webSocket.State}, aborting." );
+					break;
+				}
+				Log.Debug( "Sending refresh message to websocket client..." );
+				byte[] bytes = SysText.Encoding.ASCII.GetBytes( "refresh" );
+				await webSocket.SendAsync( bytes, SysNetWebSock.WebSocketMessageType.Text, true, SysThread.CancellationToken.None );
+			}
+		}
+	}
+
+	static async SysTask.Task serveLiveReloadJs( AspHttp.HttpContext context )
+	{
+		FilePath liveReloadJavascriptFilePath = DotNetHelpers.GetMainModuleDirectoryPath().File( "live-reload.js" );
+		context.Response.ContentType = "text/javascript";
+		await context.Response.SendFileAsync( liveReloadJavascriptFilePath.Path );
+	}
+}

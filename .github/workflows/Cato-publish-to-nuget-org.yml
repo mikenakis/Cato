@@ -31,7 +31,7 @@ jobs:
         dotnet-version: 9.0.200
 
     - name: build release
-      run: build.bash Configuration=Release
+      run: bash build.bash Configuration=Release
 
     - name: publish to nuget
-      run: publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://api.nuget.org/v3/index.json ApiKey=${{ secrets.NUGET_API_KEY }}
+      run: bash publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://api.nuget.org/v3/index.json ApiKey=${{ secrets.NUGET_API_KEY }}

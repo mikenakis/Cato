@@ -3,7 +3,7 @@
 ## A static file web server with live-reload for development
 
 <p align="center">
-<img width="256" src="Cato/Cato-logo.svg" />
+<img width="256" src="Cato-logo.svg" />
 </p>
 
 [![Build](https://github.com/mikenakis/Cato/actions/workflows/Cato-build-and-test-on-push.yml/badge.svg)](https://github.com/mikenakis/Cato/actions/workflows/Cato-build-and-test-on-push.yml)

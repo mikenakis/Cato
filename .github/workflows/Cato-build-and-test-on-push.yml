@@ -36,11 +36,14 @@ jobs:
       with:
         dotnet-version: 9.0.200
 
+    - name: troubleshooting
+      run: ls -al
+
     - name: build debug and run tests
-      run: build.bash Configuration=Debug RunTests=Yes
+      run: bash build.bash Configuration=Debug RunTests=Yes
 
     - name: build release
-      run: build.bash Configuration=Release
+      run: bash build.bash Configuration=Release
 
     - name: publish to github
-      run: publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
+      run: bash publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}

@@ -36,17 +36,12 @@ jobs:
       with:
         dotnet-version: 9.0.200
 
-    - name: "Configuration 'Debug': build and run tests"
-      run: scripts/build.bash Configuration=Debug RunTests=Yes
+    - run: build.bash Configuration=Debug RunTests=Yes
 
-#    - name: "Configuration 'Develop': build"
-#      run: scripts/build.bash Configuration=Develop
+#      run: build.bash Configuration=Develop
 #
-#    - name: "Configuration 'Develop': publish"
-#      run: scripts/publish.bash Configuration=Develop ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
+#    - run: publish.bash Configuration=Develop ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
 
-    - name: "Configuration 'Release': build"
-      run: scripts/build.bash Configuration=Release
+    - run: build.bash Configuration=Release
 
-    - name: "Configuration 'Release': publish"
-      run: scripts/publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
+    - run: publish.bash Configuration=Release ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}

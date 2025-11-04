@@ -1,0 +1,9 @@
+{
+  "profiles": {
+		"Scripts": {
+			"commandName": "Project",
+			"notWorkingDirectory": "C:\\Users\\MBV\\Personal\\Documents\\digital-garden\\michael.gr-blaster-publish",
+			"workingDirectory": "$(ProjectDir)\\web"
+		}
+  }
+}

@@ -1,6 +1,6 @@
 # Cato
 
-## A static file web server with live-reload for development
+## A static file web server with live-reload (for development)
 
 <p align="center">
 <img width="256" src="Cato-logo.svg" />
@@ -11,7 +11,7 @@
 
 ### What does it do?
 
-- It serves at [http://localhost:8080](http://localhost:8080) the contents of a certain directory.
+- It serves via http the contents of a certain directory.
 
 - It implements live-reload.
  
@@ -27,11 +27,21 @@ If a message is received, it reloads the page.
 Cato listens for file system-changes in the directory containing the files that are being served.
 When cato detects a change, it sends a message to each connected websocket, which causes each page to be reloaded.
 
+### How to use?
+
+- Begin with `dotnet tool install cato`.  (Specify `--tool-path` if you do not want to be bothered with manifest file crap.)
+
+- Run cato in a directory to serve that directory at http://localhost:8080
+
+- Run with `--help` to see available options.
+
 -----
 
 Named "Cato" after [Cato Fong](https://en.wikipedia.org/wiki/List_of_The_Pink_Panther_characters#Cato_Fong), the trusted 
-(but also not trusted) sidekick of inspector Clouseau in the first line of the Pink Panther movies.
+sidekick of inspector Clouseau in the first line of the Pink Panther movies.
 
 -----
 
-Cover image: The Cato logo, by michael.gr, based on ["Fist" by Maxim Kulikov from the Noun Project](https://thenounproject.com/icon/fist-1316322/) (CC BY 3.0) and ["Phone" by Lesha Petrick from the Noun Project](https://thenounproject.com/icon/phone-1397798/) (CC BY 3.0)
+Cover image: The Cato logo, by michael.gr, 
+based on ["Fist" by Maxim Kulikov from the Noun Project](https://thenounproject.com/icon/fist-1316322/) ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/deed.en)) 
+and ["Phone" by Lesha Petrick from the Noun Project](https://thenounproject.com/icon/phone-1397798/) ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/deed.en))

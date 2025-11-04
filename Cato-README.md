@@ -17,23 +17,22 @@
  
 ### What is Live Reload?
 
-Live reload is a feature that automatically reloads a page in the browser if you change that page on the file-system.
+Live reload means that a page shown in a browser tab gets automatically reloaded if it is changed on the file-system.
+
+### How to use?
+
+- Begin with `dotnet tool install --global cato`.
+
+- Run Cato in a directory to have that directory served at `http://localhost:8080`
+
+- Run Cato with `--help` to see available options.
 
 ### How does Live Reload actually work?
 
 Cato embeds a little javascript in every html page that it serves. 
-This script opens up a websocket with cato, and listens for messages.
-If a message is received, it reloads the page.
-Cato listens for file system-changes in the directory containing the files that are being served.
-When cato detects a change, it sends a message to each connected websocket, which causes each page to be reloaded.
-
-### How to use?
-
-- Begin with `dotnet tool install cato`.  (Specify `--tool-path` if you do not want to be bothered with manifest file crap.)
-
-- Run cato in a directory to serve that directory at http://localhost:8080
-
-- Run with `--help` to see available options.
+This script opens up a websocket with Cato, and when it receives a message through that websocket, it reloads the page.
+Cato listens for file system-changes in the directory containing the files that are being served, and when it
+detects a change, it sends a message to each connected websocket, which causes each page to reload.
 
 -----
 

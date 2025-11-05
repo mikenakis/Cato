@@ -57,6 +57,8 @@
 	<Choose>
 		<When Condition="'$(Configuration)'=='Debug'">
 			<PropertyGroup>
+				<DefineTrace>False</DefineTrace>
+				<DefineDebug>False</DefineDebug>
 				<!-- PEARL: DEBUG and TRACE have already been defined and they would be defined even if we did not want them to -->
 				<DefineConstants>$(DefineConstants);PRECONDITIONS;ASSERTIONS</DefineConstants>
 				<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
@@ -117,13 +119,9 @@
 		<Message Importance="High" Text="TargetFramework: '$(TargetFramework)'; TargetPlatform: '$(TargetPlatform)'; RuntimeIdentifier: '$(RuntimeIdentifier)'" />
 	</Target>-->
 
-	 <!--<Target Name="PrintStuff2" BeforeTargets="Compile">
-		<Message Importance="High" Text="Configuration: '$(Configuration)'; DefineConstants: '$(DefineConstants)'" />
-	</Target>-->
-
-	<!--<Target Name="PrintStuff3" BeforeTargets="Compile">
-		<Message Importance="High" Text="IsTestProject: '$(IsTestProject)'" />
-	</Target>-->
+	 <Target Name="PrintStuff2" BeforeTargets="CoreCompile">
+		<Message Importance="High" Text="Configuration: '$(Configuration)'; IsTestProject: '$(IsTestProject)'; DefineConstants: '$(DefineConstants)'" />
+	</Target>
 
 	<PropertyGroup Condition="'$(EnableNETAnalyzers)' == 'True'">
 		<AnalysisLevel>latest-Recommended</AnalysisLevel>

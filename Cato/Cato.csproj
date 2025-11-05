@@ -37,8 +37,8 @@
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<PackageReference Include="MikeNakis.Kit-$(PackagesConfiguration)" Version="5.1.*" PrivateAssests="All" />
-		<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.36" PrivateAssests="All" />
+		<!--<PackageReference Include="MikeNakis.Kit-$(PackagesConfiguration)" Version="5.1.*" PrivateAssests="All" />
+		<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.36" PrivateAssests="All" />-->
 	</ItemGroup>
 
 	<ItemGroup>
@@ -47,6 +47,36 @@
 	  </None>
 	</ItemGroup>
 
+	<!-- PEARL: Dotnet does not support swapping between package and project dependencies. The following nonsense is
+	            necessary to work around this limitation. See https://github.com/dotnet/project-system/issues/195 -->
+	<Choose>
+		<When Condition="Exists('..\..\MikeNakis.Kit\MikeNakis.Kit\MikeNakis.Kit.csproj')">
+			<ItemGroup>
+				<ProjectReference Include="..\..\MikeNakis.Kit\MikeNakis.Kit\MikeNakis.Kit.csproj" />
+			</ItemGroup>
+		</When>
+		<Otherwise>
+			<ItemGroup>
+				<PackageReference Include="MikeNakis.Kit-$(PackagesConfiguration)" Version="5.1.*" PrivateAssests="All" />
+			</ItemGroup>
+		</Otherwise>
+	</Choose>
+
+	<!-- PEARL: Dotnet does not support swapping between package and project dependencies. The following nonsense is
+	            necessary to work around this limitation. See https://github.com/dotnet/project-system/issues/195 -->
+	<Choose>
+		<When Condition="Exists('..\..\MikeNakis.Clio\MikeNakis.Clio\MikeNakis.Clio.csproj')">
+			<ItemGroup>
+				<ProjectReference Include="..\..\MikeNakis.Clio\MikeNakis.Clio\MikeNakis.Clio.csproj" />
+			</ItemGroup>
+		</When>
+		<Otherwise>
+			<ItemGroup>
+				<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.*" PrivateAssests="All" />
+			</ItemGroup>
+		</Otherwise>
+	</Choose>
+	
 	<!-- NuGet Packaging ******************************************************************************************* -->
 
 	<!-- PEARL: this target is executed after pack, even though we say BeforeTargets="Pack" -->

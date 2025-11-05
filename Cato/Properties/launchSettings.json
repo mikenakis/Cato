@@ -2,7 +2,7 @@
   "profiles": {
     "Scripts": {
       "commandName": "Project",
-      "workingDirectory": "$(SolutionDir)\\Cato Test\\web",
+      "commandLineArgs": "C:\\Users\\MBV\\Personal\\Documents\\digital-garden\\michael.gr-blaster-publish",
       "notWorkingDirectory": "C:\\Users\\MBV\\Personal\\Documents\\digital-garden\\michael.gr-blaster-publish"
     }
   }

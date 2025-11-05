@@ -32,22 +32,19 @@ public sealed class CatoMain
 	static void Main( string[] arguments )
 	{
 		Clio.ArgumentParser argumentParser = new();
-		Clio.IPositionalArgument<string> prefixArgument = argumentParser.AddStringPositionalWithDefault( "prefix", "http://localhost:8000/", "The host name and port to serve" );
-		Clio.IPositionalArgument<string> webRootArgument = argumentParser.AddStringPositionalWithDefault( "web-root", ".", "The directory containing the files to serve" );
-		if( !argumentParser.TryParse( arguments ) )
-		{
-			Sys.Environment.Exit( -1 );
-			return;
-		}
-		var webRoot = DirectoryPath.FromAbsoluteOrRelativePath( webRootArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
-		Sys.Console.WriteLine( $"Serving '{webRoot}'" );
-		Sys.Console.WriteLine( $"On '{prefixArgument.Value}'" );
+		Clio.IOptionArgument<string> hostNameArgument = argumentParser.AddStringOptionWithDefault( "host-name", "localhost", 'c', "The host name to serve at", "name" );
+		Clio.IOptionArgument<int> portNumberArgument = argumentParser.AddOptionWithDefault( "port-number", Clio.IntCodec.Instance, 8080, 'p', "The port number to serve at", "number" );
+		Clio.IPositionalArgument<string> contentDirectoryArgument = argumentParser.AddStringPositionalWithDefault( "content-directory", ".", "The directory containing the files to serve" );
+		argumentParser.TryParse( arguments );
+		DirectoryPath contentDirectory = DirectoryPath.FromAbsoluteOrRelativePath( contentDirectoryArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
+		Sys.Console.WriteLine( $"Serving '{contentDirectory}'" );
+		Sys.Console.WriteLine( $"On 'http://{hostNameArgument.Value}:{portNumberArgument.Value}'" );
 		AwaitableEvent awaitableEvent = new();
 		LoggingAction loggingAction = new LoggingAction( awaitableEvent.Trigger, "Change detected" );
 		using( Hysterator hysterator = new( Sys.TimeSpan.FromSeconds( 0.5 ), loggingAction.EntryPoint ) )
 		{
-			startFileSystemWatcher( webRoot, hysterator.Action );
-			startWebServer( webRoot, awaitableEvent.Awaitable );
+			startFileSystemWatcher( contentDirectory, hysterator.Action );
+			startWebServer( contentDirectory, hostNameArgument.Value, portNumberArgument.Value, awaitableEvent.Awaitable );
 			Sys.Console.WriteLine( "Press [Enter] to terminate: " );
 			Sys.Console.ReadLine();
 		}
@@ -87,14 +84,14 @@ public sealed class CatoMain
 		}
 	}
 
-	static void startWebServer( DirectoryPath webRoot, Awaitable awaitable )
+	static void startWebServer( DirectoryPath webRoot, string hostName, int portNumber, Awaitable awaitable )
 	{
 		// from Microsoft Learn
 		//     https://learn.microsoft.com/en-us/aspnet/core/fundamentals/websockets?view=aspnetcore-9.0
 		// an alternative, but very similar, implementation is here:
 		//     https://www.tabsoverspaces.com/233883-simple-websocket-client-and-server-application-using-dotnet
 		AspBuilder.WebApplicationBuilder builder = AspBuilder.WebApplication.CreateBuilder( new AspBuilder.WebApplicationOptions() { WebRootPath = webRoot.Path } );
-		builder.WebHost.UseUrls( "http://localhost:8080" );
+		builder.WebHost.UseUrls( $"http://{hostName}:{portNumber}" );
 		builder.Logging.Services.RemoveAll<AspLog.ILoggerProvider>();
 		builder.Logging.Services.TryAddEnumerable( AspDepInj.ServiceDescriptor.Singleton<AspLog.ILoggerProvider, AspLogDebug.DebugLoggerProvider>() );
 		AspBuilder.WebApplication app = builder.Build();

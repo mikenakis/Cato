@@ -38,7 +38,7 @@
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="MikeNakis.Kit-$(PackagesConfiguration)" Version="5.1.*" PrivateAssests="All" />
-		<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.*" PrivateAssests="All" />
+		<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.36" PrivateAssests="All" />
 	</ItemGroup>
 
 	<ItemGroup>

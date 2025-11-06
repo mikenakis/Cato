@@ -23,6 +23,7 @@ using Log = MikeNakis.Kit.Log;
 using Sys = System;
 using SysIo = System.IO;
 using SysNetWebSock = System.Net.WebSockets;
+using SysReflect = System.Reflection;
 using SysTask = System.Threading.Tasks;
 using SysText = System.Text;
 using SysThread = System.Threading;
@@ -37,6 +38,7 @@ public sealed class CatoMain
 		Clio.IPositionalArgument<string> contentDirectoryArgument = argumentParser.AddStringPositionalWithDefault( "content-directory", ".", "The directory containing the files to serve" );
 		argumentParser.TryParse( arguments );
 		DirectoryPath contentDirectory = DirectoryPath.FromAbsoluteOrRelativePath( contentDirectoryArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
+		Sys.Console.WriteLine( $"Cato {GetExecutingAssemblyNameAndVersion()}" );
 		Sys.Console.WriteLine( $"Serving '{contentDirectory}'" );
 		Sys.Console.WriteLine( $"On 'http://{hostNameArgument.Value}:{portNumberArgument.Value}'" );
 		AwaitableEvent awaitableEvent = new();
@@ -48,6 +50,13 @@ public sealed class CatoMain
 			Sys.Console.WriteLine( "Press [Enter] to terminate: " );
 			Sys.Console.ReadLine();
 		}
+	}
+
+	public static string GetExecutingAssemblyNameAndVersion()
+	{
+		SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
+		SysReflect.AssemblyName assemblyName = assembly.GetName();
+		return $"{assemblyName.Name} {assemblyName.Version} {assemblyName.FullName}";
 	}
 
 	static SysIo.FileSystemWatcher startFileSystemWatcher( DirectoryPath directoryPath, Sys.Action waitableTaskTrigegr )

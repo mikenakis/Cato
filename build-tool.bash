@@ -15,6 +15,8 @@ shopt -s extglob
 # Example:
 # bash build-tool.bash ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
 
+Version=$(git describe --tags)
+
 while [ $# -gt 0 ]; do
   case "$1" in
       ProjectName=*)

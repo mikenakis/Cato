@@ -15,6 +15,8 @@ shopt -s extglob
 # Example:
 # bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} ApiKey=${{ secrets.NUGET_API_KEY }}
 
+Version=$(git describe --tags)
+
 while [ $# -gt 0 ]; do
   case "$1" in
       ProjectName=*)

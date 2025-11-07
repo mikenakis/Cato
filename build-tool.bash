@@ -12,34 +12,6 @@ set -u
 # Magical incantation to enable extended pattern matching.
 shopt -s extglob
 
-# Example:
-# bash build-tool.bash ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
-
-Version=$(git describe --tags)
-
-while [ $# -gt 0 ]; do
-  case "$1" in
-      ProjectName=*)
-      ProjectName="${1#*=}"
-      ;;
-      Version=*)
-      Version="${1#*=}"
-      ;;
-      Address=*)
-      Address="${1#*=}"
-      ;;
-      ApiKey=*)
-      ApiKey="${1#*=}"
-      ;;
-    *)
-      printf "Invalid argument: '$1'\n"
-      exit 1
-  esac
-  shift
-done
-
-printf "ProjectName: ${ProjectName}; Version: ${Version}; Address: ${Address}; ApiKey: ${ApiKey}\n"
-
 # PEARL: In GitHub, the output of `dotnet build` looks completely different from what it looks when building locally.
 #        For example, the output of "Message" tasks is not shown, even when "Importance" is set to "High".
 #        The "-ConsoleLoggerParameters:off" magical incantation corrects this problem.
@@ -49,7 +21,3 @@ printf "ProjectName: ${ProjectName}; Version: ${Version}; Address: ${Address}; A
 dotnet restore    -TerminalLogger:off -check
 dotnet build      -TerminalLogger:off -check --configuration Debug --no-restore
 dotnet test       -TerminalLogger:off -check --configuration Debug --no-build --verbosity normal
-
-dotnet build      -TerminalLogger:off -check --configuration Release --no-restore
-dotnet pack       -TerminalLogger:off -check --configuration Release --no-build --property:PackageVersion=${Version}
-dotnet nuget push ${ProjectName}/bin/Release/*.nupkg --source ${Address} --api-key ${ApiKey}

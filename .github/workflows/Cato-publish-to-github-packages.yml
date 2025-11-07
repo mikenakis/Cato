@@ -20,8 +20,8 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 100
+
+    - run: git fetch --prune --unshallow
 
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4

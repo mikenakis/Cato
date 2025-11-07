@@ -29,9 +29,10 @@
 		<PackageReleaseNotes>initial release</PackageReleaseNotes>
 		<IncludeSymbols Condition="'$(Configuration)' == 'Release'">True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
+		
 	</PropertyGroup>
 
+		
 	<Import Project="..\AllProjects.proj.xml" />
 	<Import Project="..\BannedApiAnalyzers.proj.xml" />
 
@@ -76,7 +77,7 @@
 			</ItemGroup>
 		</Otherwise>
 	</Choose>
-	
+
 	<!-- NuGet Packaging ******************************************************************************************* -->
 
 	<!-- PEARL: this target is executed after pack, even though we say BeforeTargets="Pack" -->

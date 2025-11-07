@@ -3,7 +3,9 @@ namespace Cato;
 using System.Collections.Immutable;
 using MikeNakis.Clio.Extensions;
 using MikeNakis.Kit;
+using MikeNakis.Kit.Extensions;
 using MikeNakis.Kit.FileSystem;
+using static System.Reflection.CustomAttributeExtensions;
 using static Microsoft.AspNetCore.Builder.DefaultFilesExtensions;
 using static Microsoft.AspNetCore.Builder.HostFilteringBuilderExtensions;
 using static Microsoft.AspNetCore.Builder.StaticFileExtensions;
@@ -38,7 +40,7 @@ public sealed class CatoMain
 		Clio.IPositionalArgument<string> contentDirectoryArgument = argumentParser.AddStringPositionalWithDefault( "content-directory", ".", "The directory containing the files to serve" );
 		argumentParser.TryParse( arguments );
 		DirectoryPath contentDirectory = DirectoryPath.FromAbsoluteOrRelativePath( contentDirectoryArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
-		Sys.Console.WriteLine( $"Cato {GetExecutingAssemblyNameAndVersion()}" );
+		Sys.Console.WriteLine( getVersionInformation() );
 		Sys.Console.WriteLine( $"Serving '{contentDirectory}'" );
 		Sys.Console.WriteLine( $"On 'http://{hostNameArgument.Value}:{portNumberArgument.Value}'" );
 		AwaitableEvent awaitableEvent = new();
@@ -52,11 +54,28 @@ public sealed class CatoMain
 		}
 	}
 
-	public static string GetExecutingAssemblyNameAndVersion()
+	static string getVersionInformation()
 	{
+		// PEARL: Unlike all other attributes defined in AssemblyInfo.cs, the "AssemblyVersion" attribute is **_not_** stored in
+		// the assembly. Therefore, `assembly.GetCustomAttribute<SysReflect.AssemblyVersionAttribute>()` will always return `null`.
 		SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
-		SysReflect.AssemblyName assemblyName = assembly.GetName();
-		return $"{assemblyName.Name} {assemblyName.Version} {assemblyName.FullName}";
+		string v1 = $"{assembly.GetCustomAttribute<SysReflect.AssemblyInformationalVersionAttribute>()?.InformationalVersion}";
+		string v2 = $"{assembly.GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>()?.Version}";
+		return $"{getAssemblyName()} v1={v1} v2={v2}\r\n";
+		// Without GitInfo: v1=1.0.0+0a4715fab1005a120cfd5fdc69dffc1cf08a10bb v2=1.0.0.0
+		// With GitInfo: v1=1.0.0+0a4715fab1005a120cfd5fdc69dffc1cf08a10bb v2=1.0.0.0
+		//+ $" BaseVersion={ThisAssembly.Git.BaseVersion.Major}.{ThisAssembly.Git.BaseVersion.Minor}.{ThisAssembly.Git.BaseVersion.Patch}\r\n"
+		//+ $" SemVer={ThisAssembly.Git.SemVer.Major}.{ThisAssembly.Git.SemVer.Minor}.{ThisAssembly.Git.SemVer.Patch}\r\n"
+		//+ $" Source={ThisAssembly.Git.SemVer.Source} DashLabel='{ThisAssembly.Git.SemVer.DashLabel}' Label='{ThisAssembly.Git.SemVer.Label}'\r\n"
+		//+ $" Branch={ThisAssembly.Git.Branch} Commits={ThisAssembly.Git.Commits} CommitDate={ThisAssembly.Git.CommitDate}\r\n"
+		//+ $" Tag={ThisAssembly.Git.Tag} BaseTag={ThisAssembly.Git.BaseTag} Sha={ThisAssembly.Git.Sha}";
+
+		static string getAssemblyName()
+		{
+			SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
+			SysReflect.AssemblyName assemblyName = assembly.GetName();
+			return assemblyName.Name.OrThrow();
+		}
 	}
 
 	static SysIo.FileSystemWatcher startFileSystemWatcher( DirectoryPath directoryPath, Sys.Action waitableTaskTrigegr )

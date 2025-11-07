@@ -13,7 +13,7 @@ set -u
 shopt -s extglob
 
 # Example:
-# bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Version=${{ steps.tag_bump.outputs.new_tag }} ApiKey=${{ secrets.NUGET_API_KEY }}
+# bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
 
 Version=$(git describe --tags)
 
@@ -22,8 +22,8 @@ while [ $# -gt 0 ]; do
       ProjectName=*)
       ProjectName="${1#*=}"
       ;;
-      Version=*)
-      Version="${1#*=}"
+      Address=*)
+      Address="${1#*=}"
       ;;
       ApiKey=*)
       ApiKey="${1#*=}"
@@ -35,7 +35,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-printf "ProjectName: ${ProjectName}; Version: ${Version}; ApiKey: ${ApiKey}\n"
+printf "ProjectName: ${ProjectName}; Version: ${Version}; Address: ${Address} ApiKey: ${ApiKey}\n"
 
 # PEARL: In GitHub, the output of `dotnet build` looks completely different from what it looks when building locally.
 #        For example, the output of "Message" tasks is not shown, even when "Importance" is set to "High".

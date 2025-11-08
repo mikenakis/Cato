@@ -28,14 +28,14 @@ while [ $# -gt 0 ]; do
       ApiKey=*)
       ApiKey="${1#*=}"
       ;;
-      *)
+    *)
       printf "Invalid argument: '$1'\n"
       exit 1
   esac
   shift
 done
 
-printf "ProjectName: ${ProjectName}; Version: ${Version}; Address: ${Address} ApiKey: ${ApiKey}\n"
+printf "ProjectName='${ProjectName}'; Version='${Version}'; Address='${Address}'; ApiKey='${ApiKey}'\n"
 
 # PEARL: In GitHub, the output of `dotnet build` looks completely different from what it looks when building locally.
 #        For example, the output of "Message" tasks is not shown, even when "Importance" is set to "High".
@@ -44,7 +44,6 @@ printf "ProjectName: ${ProjectName}; Version: ${Version}; Address: ${Address} Ap
 #        Luckily, the "-TerminalLogger:off" magical incantation works both when building locally and on github.
 
 dotnet restore    -TerminalLogger:off -check
-
 dotnet build      -TerminalLogger:off -check --configuration Release --no-restore
 dotnet pack       -TerminalLogger:off -check --configuration Release --no-build --property:PackageVersion=${Version}
-dotnet nuget push ${ProjectName}/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${ApiKey}
+dotnet nuget push ${ProjectName}/bin/Release/*.nupkg --source ${Address} --api-key ${ApiKey}

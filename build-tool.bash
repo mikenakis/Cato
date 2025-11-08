@@ -3,20 +3,16 @@
 # For some reason, this shebang does not work even though it is the recommended one:
 # #!/usr/bin/env bash
 
-# Magical incantation to prevent silent failure if a command fails. (though this seems to be the default behavior.)
-set -e
-
-# Magical incantation to prevent silent failure if an undefined variable is used.
-set -u
-
-# Magical incantation to enable extended pattern matching.
+# Magical incantations to enable unofficial bash strict mode, extended pattern matching, etc.
+set -euxo pipefail
 shopt -s extglob
 
 # PEARL: In GitHub, the output of `dotnet build` looks completely different from what it looks when building locally.
 #        For example, the output of "Message" tasks is not shown, even when "Importance" is set to "High".
 #        The "-ConsoleLoggerParameters:off" magical incantation corrects this problem.
-# PEARL-ON-PEARL: The "-ConsoleLoggerParameters:off" magical incantation does not work when building locally; ir only works on github.
-#        Luckily, the "-TerminalLogger:off" magical incantation works both when building locally and on github.
+# PEARL-ON-PEARL: The "-ConsoleLoggerParameters:off" magical incantation does not work when building locally; it only
+#        works on github. Luckily, the "-TerminalLogger:off" magical incantation works both when building locally and
+#        on github.
 
 dotnet restore    -TerminalLogger:off -check
 dotnet build      -TerminalLogger:off -check --configuration Debug --no-restore

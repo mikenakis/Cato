@@ -13,10 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     # runs-on: windows-latest
 
+    permissions:
+      contents: write
+
     steps:
 
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Unshallow
+      run: git fetch --prune --unshallow
 
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
@@ -25,3 +31,14 @@ jobs:
 
     - name: Build 'Debug' configuration, run tests.
       run: bash build-tool.bash
+
+    - name: GitHub Tag Bump
+      id: tag_bump
+      uses: anothrNick/github-tag-action@1.71.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        INITIAL_VERSION: 5.1.0
+        DEFAULT_BUMP: patch
+
+    - name: Build 'Release' configuration, publish to GitHub Packages
+      run: bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}

@@ -3,17 +3,17 @@
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<Configurations>Debug;Release</Configurations>
-	    <OutputType>Exe</OutputType>
+		<OutputType>Exe</OutputType>
 		<ApplicationIcon>Cato.ico</ApplicationIcon>
 
 		<!-- Packing properties -->
 		<PackAsTool>True</PackAsTool>
 		<!--<ToolCommandName>SvgConvert</ToolCommandName>-->
 		<!--<PackageOutputPath>./nupkg</PackageOutputPath>-->
-			
-		<!--PackageId: the default is $(MSBuildProjectName)--> 
+
+		<!--PackageId: the default is $(MSBuildProjectName)-->
 		<!--<PackageId>$(AssemblyName)</PackageId>-->
-		<!--Title: the default appears to be $(MSBuildProjectName) if equal to $(AssemblyName), blank otherwise.--> 
+		<!--Title: the default appears to be $(MSBuildProjectName) if equal to $(AssemblyName), blank otherwise.-->
 		<Title>$(MSBuildProjectName) ($(Configuration))</Title>
 		<Authors>MikeNakis</Authors>
 		<Description>A static file web server with live-reload for development</Description>
@@ -24,28 +24,29 @@
 		<PublishRepositoryUrl>True</PublishRepositoryUrl>
 		<PackageTags>dotnet; dotnet-core; utilities; command-line; tools; command-line-tools; web; www; live-reload; web-server; static-web-server</PackageTags>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
- 		<PackageProjectUrl>https://github.com/mikenakis/Cato</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/mikenakis/Cato</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageReleaseNotes>initial release</PackageReleaseNotes>
 		<IncludeSymbols Condition="'$(Configuration)' == 'Release'">True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		
+
 	</PropertyGroup>
 
-		
+	<ItemGroup>
+		<PackageReference Include="GitInfo" Version="3.6.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+	</ItemGroup>
+
 	<Import Project="..\AllProjects.proj.xml" />
 	<Import Project="..\BannedApiAnalyzers.proj.xml" />
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<!--<PackageReference Include="MikeNakis.Kit-$(PackagesConfiguration)" Version="5.1.*" PrivateAssests="All" />
-		<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.36" PrivateAssests="All" />-->
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="live-reload.js">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Update="live-reload.js">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 	<!-- PEARL: Dotnet does not support swapping between package and project dependencies. The following nonsense is

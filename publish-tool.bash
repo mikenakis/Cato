@@ -4,8 +4,9 @@
 # #!/usr/bin/env bash
 
 # Magical incantations to enable unofficial bash strict mode, extended pattern matching, etc.
-set -euxo pipefail
+set -euo pipefail
 shopt -s extglob
+# set -x
 
 # Example:
 # bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
@@ -15,11 +16,14 @@ Version=$(git describe --tags)
 while [ $# -gt 0 ]; do
 	case "$1" in
 		ProjectName=*)
-			ProjectName="${1#*=}" ;;
+			ProjectName="${1#*=}"
+			;;
 		Address=*)
-			Address="${1#*=}" ;;
+			Address="${1#*=}"
+			;;
 		ApiKey=*)
-			ApiKey="${1#*=}" ;;
+			ApiKey="${1#*=}"
+			;;
 		*)
 			printf "$0: Invalid argument: '$1'\n"
 			exit 1

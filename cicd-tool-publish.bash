@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# For some reason, this shebang does not work even though it is the recommended one:
-# #!/usr/bin/env bash
-
 # Magical incantations to enable unofficial bash strict mode, extended pattern matching, etc.
 set -euo pipefail
 shopt -s extglob

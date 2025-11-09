@@ -56,20 +56,30 @@ public sealed class CatoMain
 
 	static string getVersionInformation()
 	{
+		Log.Debug( $"GitInfo:" );
 		// PEARL: Unlike all other attributes defined in AssemblyInfo.cs, the "AssemblyVersion" attribute is **_not_**
 		// stored in the assembly. Therefore, `assembly.GetCustomAttribute<SysReflect.AssemblyVersionAttribute>()` will
 		// always return `null`.
-		SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
-		string v1 = $"{assembly.GetCustomAttribute<SysReflect.AssemblyInformationalVersionAttribute>()?.InformationalVersion}";
-		string v2 = $"{assembly.GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>()?.Version}";
-		return $"{getAssemblyName()} v1={v1} v2={v2}\r\n"
+		Log.Debug( $"  AssemblyInformationalVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyInformationalVersionAttribute>()?.InformationalVersion}" );
+		Log.Debug( $"  AssemblyFileVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>()?.Version}" );
 		// Without GitInfo: v1=1.0.0+0a4715fab1005a120cfd5fdc69dffc1cf08a10bb v2=1.0.0.0
 		// With GitInfo: v1=5.1.27+master.f0b5bd7.f0b5bd745a763c94e55cfff3ecb514ca16a8f8f1 v2=5.1.27.0
-		+ $" BaseVersion={ThisAssembly.Git.BaseVersion.Major}.{ThisAssembly.Git.BaseVersion.Minor}.{ThisAssembly.Git.BaseVersion.Patch}\r\n"
-		+ $" SemVer={ThisAssembly.Git.SemVer.Major}.{ThisAssembly.Git.SemVer.Minor}.{ThisAssembly.Git.SemVer.Patch}\r\n"
-		+ $" Source={ThisAssembly.Git.SemVer.Source} DashLabel='{ThisAssembly.Git.SemVer.DashLabel}' Label='{ThisAssembly.Git.SemVer.Label}'\r\n"
-		+ $" Branch={ThisAssembly.Git.Branch} Commits={ThisAssembly.Git.Commits} CommitDate={ThisAssembly.Git.CommitDate}\r\n"
-		+ $" Tag={ThisAssembly.Git.Tag} BaseTag={ThisAssembly.Git.BaseTag} Sha={ThisAssembly.Git.Sha}";
+		Log.Debug( $"  BaseVersion={ThisAssembly.Git.BaseVersion.Major}.{ThisAssembly.Git.BaseVersion.Minor}.{ThisAssembly.Git.BaseVersion.Patch}" );
+		Log.Debug( $"  SemVer={ThisAssembly.Git.SemVer.Major}.{ThisAssembly.Git.SemVer.Minor}.{ThisAssembly.Git.SemVer.Patch}" );
+		Log.Debug( $"  Source={ThisAssembly.Git.SemVer.Source} DashLabel='{ThisAssembly.Git.SemVer.DashLabel}' Label='{ThisAssembly.Git.SemVer.Label}'" );
+		Log.Debug( $"  Branch={ThisAssembly.Git.Branch} Commits={ThisAssembly.Git.Commits} CommitDate={ThisAssembly.Git.CommitDate}" );
+		Log.Debug( $"  Tag={ThisAssembly.Git.Tag} BaseTag={ThisAssembly.Git.BaseTag} Sha={ThisAssembly.Git.Sha}" );
+
+		SysText.StringBuilder stringBuilder = new();
+		stringBuilder.Append( getAssemblyName() ).Append( ' ' );
+		stringBuilder.Append( ThisAssembly.Git.SemVer.Major ).Append( '.' );
+		stringBuilder.Append( ThisAssembly.Git.SemVer.Minor ).Append( '.' );
+		stringBuilder.Append( ThisAssembly.Git.SemVer.Patch );
+		if( Identity( ThisAssembly.Git.Branch ) != "master" )
+			stringBuilder.Append( '-' ).Append( ThisAssembly.Git.Branch );
+		if( Identity( ThisAssembly.Git.Commits ) != "0" )
+			stringBuilder.Append( '+' ).Append( ThisAssembly.Git.Commits );
+		return stringBuilder.ToString();
 
 		static string getAssemblyName()
 		{

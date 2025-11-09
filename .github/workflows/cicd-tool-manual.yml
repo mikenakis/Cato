@@ -1,4 +1,4 @@
-name: publish-to-nuget-org
+name: nuget publish
 
 on:
   workflow_dispatch:

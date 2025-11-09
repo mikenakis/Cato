@@ -30,4 +30,4 @@ jobs:
         dotnet-version: 9.0.200
 
     - name: Build 'Release' configuration, publish to NuGet Org
-      run: bash publish-tool.bash ProjectName=${{ github.event.repository.name }} Address=https://api.nuget.org/v3/index.json ApiKey=${{ secrets.NUGET_API_KEY }}
+      run: bash cicd-tool-publish.bash ProjectName=${{ github.event.repository.name }} Address=https://api.nuget.org/v3/index.json ApiKey=${{ secrets.NUGET_API_KEY }}

@@ -1,4 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="UpdateBranchName">
+
+	<Target Name="UpdateBranchName"> <!-- BeforeTargets="ResolveReferences" -->
+		<Exec Command="git branch --show-current" ConsoleToMsBuild="True" StandardOutputImportance="Low">
+			<Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
+		</Exec>
+		<WriteLinesToFile File="$(MSBuildProjectDirectory)/../branch.txt" Overwrite="true" Lines="$(Branch)" />
+		<Message Importance="High" Text="Branch: '$(Branch)'" />
+	</Target>
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -26,18 +34,36 @@
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/mikenakis/Cato</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<PackageReleaseNotes>initial release</PackageReleaseNotes>
+		<PackageReleaseNotes></PackageReleaseNotes>
 		<IncludeSymbols Condition="'$(Configuration)' == 'Release'">True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-	</PropertyGroup>
+		<!--<GenerateAssemblyInfo>False</GenerateAssemblyInfo>-->
 
-	<ItemGroup>
-		<PackageReference Include="GitInfo" Version="3.6.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
-	</ItemGroup>
+		<!-- PEARL: For some entirely unfathomable and undocumented reason, the 'Branch' property that was set by the
+		     "UpdateBranchName" task does not exist here, so we have to re-create it and load its value from file. -->
+		<Branch>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../branch.txt").TrimEnd())</Branch>
+		<VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../version.txt').TrimEnd())</VersionPrefix>
+		<Snapshot>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../snapshot.txt").TrimEnd())</Snapshot>
+		<BranchOrBlank Condition="'$(Branch)'=='master'"></BranchOrBlank>
+		<BranchOrBlank Condition="'$(Branch)'!='master'">-$(Branch)</BranchOrBlank>
+		<BranchOrBlank Condition="'$(Branch)'==''">-no-branch</BranchOrBlank>
+		<VersionSuffix>$(BranchOrBlank)$(Snapshot)</VersionSuffix>
+		<InformationalVersion>$(VersionPrefix)$(VersionSuffix)</InformationalVersion>
+
+		<!-- PEARL: magical incantation to prevent a pile of garbage (a git commit hash) from being automagically
+		     appended to the assembly informational version. From https://stackoverflow.com/a/77051386/773113
+		     rumor has it that it is related to 'sourcelink', and it might in fact be necessary for sourcelink to
+			 work, so remember to disable sourcelink. -->
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+	</PropertyGroup>
 
 	<Import Project="..\AllProjects.proj.xml" />
 	<Import Project="..\BannedApiAnalyzers.proj.xml" />
+
+	<Target Name="Verify Branch Name" BeforeTargets="Build">
+		<Error Condition="'$(Branch)'==''" Text="AAAAAAAAAAAA" />
+	</Target>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -79,9 +105,18 @@
 		</Otherwise>
 	</Choose>
 
-	<!-- NuGet Packaging ******************************************************************************************* -->
+	<!-- *** Versioning ******************************************************************************************* -->
 
-	<!-- PEARL: this target is executed after pack, even though we say BeforeTargets="Pack" -->
+	<ItemGroup>
+		<EmbeddedResource Include="../version.txt" />
+		<EmbeddedResource Include="../branch.txt" />
+		<EmbeddedResource Include="../snapshot.txt" />
+	</ItemGroup>
+
+	<!-- *** NuGet Packaging ************************************************************************************** -->
+
+	<!-- PEARL: for some entirely unfathomable reason, this target is executed after pack, even though we say
+	     BeforeTargets="Pack" -->
 	<Target Name="CheckVersion" BeforeTargets="Pack">
 		<Message Importance="High" Text="PackageVersion = '$(PackageVersion)', Version = '$(Version)'" />
 		<Error Condition="'$(PackageVersion)' == '1.0.0'" Text="Version is 1.0.0" />

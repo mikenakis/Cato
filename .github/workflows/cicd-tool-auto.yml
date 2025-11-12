@@ -29,19 +29,5 @@ jobs:
       with:
         dotnet-version: 9.0.200
 
-    - name: Build 'Debug' configuration, run tests.
-      run: bash cicd-tool-build.bash
-
-    - name: GitHub Tag Bump
-      id: tag_bump
-      uses: anothrNick/github-tag-action@1.71.0
-      env:
-        # NOTE: This is a predefined token automagically created by GitHub, and its use requires setting 'permissions: contents: write'.
-        #       The documentation of github-tag-action says that we can avoid having to set that permission by using a Personal Access Token instead.
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        INITIAL_VERSION: 5.1.0
-        DEFAULT_BUMP: patch
-        GIT_API_TAGGING: false
-
-    - name: Build 'Release' configuration, publish to GitHub Packages
-      run: bash cicd-tool-publish.bash ProjectName=${{ github.event.repository.name }} Address=https://nuget.pkg.github.com/MikeNakis/index.json ApiKey=${{ secrets.MY_GITHUB_TOKEN }}
+    - name: Execute script for auto-trigger cicd of a tool
+      run: bash cicd-tool-auto.bash ProjectName=${{ github.event.repository.name }} GitHubPackagesNuGetApiKey=${{ secrets.MY_GITHUB_TOKEN }}

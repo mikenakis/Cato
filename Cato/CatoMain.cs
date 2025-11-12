@@ -34,21 +34,28 @@ public sealed class CatoMain
 {
 	static void Main( string[] arguments )
 	{
+		Sys.Console.WriteLine( getVersionInformation() );
 		Clio.ArgumentParser argumentParser = new();
 		Clio.IOptionArgument<string> hostNameArgument = argumentParser.AddStringOptionWithDefault( "host-name", "localhost", 'c', "The host name to serve at", "name" );
 		Clio.IOptionArgument<int> portNumberArgument = argumentParser.AddOptionWithDefault( "port-number", Clio.IntCodec.Instance, 8080, 'p', "The port number to serve at", "number" );
 		Clio.IPositionalArgument<string> contentDirectoryArgument = argumentParser.AddStringPositionalWithDefault( "content-directory", ".", "The directory containing the files to serve" );
 		argumentParser.TryParse( arguments );
 		DirectoryPath contentDirectory = DirectoryPath.FromAbsoluteOrRelativePath( contentDirectoryArgument.Value, DotNetHelpers.GetWorkingDirectoryPath() );
-		Sys.Console.WriteLine( getVersionInformation() );
+		string hostName = hostNameArgument.Value;
+		int portNumber = portNumberArgument.Value;
+		run( contentDirectory, hostName, portNumber );
+	}
+
+	static void run( DirectoryPath contentDirectory, string hostName, int portNumber )
+	{
 		Sys.Console.WriteLine( $"Serving '{contentDirectory}'" );
-		Sys.Console.WriteLine( $"On 'http://{hostNameArgument.Value}:{portNumberArgument.Value}'" );
+		Sys.Console.WriteLine( $"On 'http://{hostName}:{portNumber}'" );
 		AwaitableEvent awaitableEvent = new();
 		LoggingAction loggingAction = new LoggingAction( awaitableEvent.Trigger, "Change detected" );
 		using( Hysterator hysterator = new( Sys.TimeSpan.FromSeconds( 0.5 ), loggingAction.EntryPoint ) )
 		{
 			startFileSystemWatcher( contentDirectory, hysterator.Action );
-			startWebServer( contentDirectory, hostNameArgument.Value, portNumberArgument.Value, awaitableEvent.Awaitable );
+			startWebServer( contentDirectory, hostName, portNumber, awaitableEvent.Awaitable );
 			Sys.Console.WriteLine( "Press [Enter] to terminate: " );
 			Sys.Console.ReadLine();
 		}
@@ -56,40 +63,46 @@ public sealed class CatoMain
 
 	static string getVersionInformation()
 	{
-		Log.Debug( $"GitInfo:" );
-		// PEARL: Unlike all other attributes defined in AssemblyInfo.cs, the "AssemblyVersion" attribute is **_not_**
-		// stored in the assembly. Therefore, `assembly.GetCustomAttribute<SysReflect.AssemblyVersionAttribute>()` will
-		// always return `null`.
-		Log.Debug( $"  AssemblyInformationalVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyInformationalVersionAttribute>()?.InformationalVersion}" );
-		Log.Debug( $"  AssemblyFileVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>()?.Version}" );
-		// Without GitInfo: v1=1.0.0+0a4715fab1005a120cfd5fdc69dffc1cf08a10bb v2=1.0.0.0
-		// With GitInfo: v1=5.1.27+master.f0b5bd7.f0b5bd745a763c94e55cfff3ecb514ca16a8f8f1 v2=5.1.27.0
-		Log.Debug( $"  BaseVersion={ThisAssembly.Git.BaseVersion.Major}.{ThisAssembly.Git.BaseVersion.Minor}.{ThisAssembly.Git.BaseVersion.Patch}" );
-		Log.Debug( $"  SemVer={ThisAssembly.Git.SemVer.Major}.{ThisAssembly.Git.SemVer.Minor}.{ThisAssembly.Git.SemVer.Patch}" );
-		Log.Debug( $"  Source={ThisAssembly.Git.SemVer.Source} DashLabel='{ThisAssembly.Git.SemVer.DashLabel}' Label='{ThisAssembly.Git.SemVer.Label}'" );
-		Log.Debug( $"  Branch={ThisAssembly.Git.Branch} Commits={ThisAssembly.Git.Commits} CommitDate={ThisAssembly.Git.CommitDate}" );
-		Log.Debug( $"  Tag={ThisAssembly.Git.Tag} BaseTag={ThisAssembly.Git.BaseTag} Sha={ThisAssembly.Git.Sha}" );
-
 		SysText.StringBuilder stringBuilder = new();
-		stringBuilder.Append( getAssemblyName() ).Append( ' ' );
-		stringBuilder.Append( ThisAssembly.Git.SemVer.Major ).Append( '.' );
-		stringBuilder.Append( ThisAssembly.Git.SemVer.Minor ).Append( '.' );
-		stringBuilder.Append( ThisAssembly.Git.SemVer.Patch );
-		if( Identity( ThisAssembly.Git.Branch ) != "master" )
-			stringBuilder.Append( '-' ).Append( ThisAssembly.Git.Branch );
-		if( Identity( ThisAssembly.Git.Commits ) != "0" )
-			stringBuilder.Append( '+' ).Append( ThisAssembly.Git.Commits );
+		SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
+		stringBuilder.Append( assembly.GetName().Name.OrThrow() ).Append( ' ' );
+		stringBuilder.Append( assembly.GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>().OrThrow().Version );
 		return stringBuilder.ToString();
 
-		static string getAssemblyName()
-		{
-			SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
-			SysReflect.AssemblyName assemblyName = assembly.GetName();
-			return assemblyName.Name.OrThrow();
-		}
+		//Log.Debug( $"GitInfo:" );
+		//// PEARL: Unlike all other attributes defined in AssemblyInfo.cs, the "AssemblyVersion" attribute is **_not_**
+		//// stored in the assembly. Therefore, `assembly.GetCustomAttribute<SysReflect.AssemblyVersionAttribute>()` will
+		//// always return `null`.
+		//Log.Debug( $"  AssemblyInformationalVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyInformationalVersionAttribute>()?.InformationalVersion}" );
+		//Log.Debug( $"  AssemblyFileVersion={SysReflect.Assembly.GetExecutingAssembly().GetCustomAttribute<SysReflect.AssemblyFileVersionAttribute>()?.Version}" );
+		//// Without GitInfo: v1=1.0.0+0a4715fab1005a120cfd5fdc69dffc1cf08a10bb v2=1.0.0.0
+		//// With GitInfo: v1=5.1.27+master.f0b5bd7.f0b5bd745a763c94e55cfff3ecb514ca16a8f8f1 v2=5.1.27.0
+		//Log.Debug( $"  BaseVersion={ThisAssembly.Git.BaseVersion.Major}.{ThisAssembly.Git.BaseVersion.Minor}.{ThisAssembly.Git.BaseVersion.Patch}" );
+		//Log.Debug( $"  SemVer={ThisAssembly.Git.SemVer.Major}.{ThisAssembly.Git.SemVer.Minor}.{ThisAssembly.Git.SemVer.Patch}" );
+		//Log.Debug( $"  Source={ThisAssembly.Git.SemVer.Source} DashLabel='{ThisAssembly.Git.SemVer.DashLabel}' Label='{ThisAssembly.Git.SemVer.Label}'" );
+		//Log.Debug( $"  Branch={ThisAssembly.Git.Branch} Commits={ThisAssembly.Git.Commits} CommitDate={ThisAssembly.Git.CommitDate}" );
+		//Log.Debug( $"  Tag={ThisAssembly.Git.Tag} BaseTag={ThisAssembly.Git.BaseTag} Sha={ThisAssembly.Git.Sha}" );
+
+		//SysText.StringBuilder stringBuilder = new();
+		//stringBuilder.Append( getAssemblyName() ).Append( ' ' );
+		//stringBuilder.Append( ThisAssembly.Git.SemVer.Major ).Append( '.' );
+		//stringBuilder.Append( ThisAssembly.Git.SemVer.Minor ).Append( '.' );
+		//stringBuilder.Append( ThisAssembly.Git.SemVer.Patch );
+		//if( Identity( ThisAssembly.Git.Branch ) != "master" )
+		//	stringBuilder.Append( '-' ).Append( ThisAssembly.Git.Branch );
+		//if( Identity( ThisAssembly.Git.Commits ) != "0" )
+		//	stringBuilder.Append( '+' ).Append( ThisAssembly.Git.Commits );
+		//return stringBuilder.ToString();
+
+		//static string getAssemblyName()
+		//{
+		//	SysReflect.Assembly assembly = SysReflect.Assembly.GetExecutingAssembly();
+		//	SysReflect.AssemblyName assemblyName = assembly.GetName();
+		//	return assemblyName.Name.OrThrow();
+		//}
 	}
 
-	static SysIo.FileSystemWatcher startFileSystemWatcher( DirectoryPath directoryPath, Sys.Action waitableTaskTrigegr )
+	static SysIo.FileSystemWatcher startFileSystemWatcher( DirectoryPath directoryPath, Sys.Action observer )
 	{
 		SysIo.FileSystemWatcher fileSystemWatcher = new();
 		fileSystemWatcher.Path = directoryPath.Path;
@@ -113,7 +126,7 @@ public sealed class CatoMain
 		{
 			Assert( sender == fileSystemWatcher );
 			Log.Debug( $"{e.ChangeType} {e.FullPath}" );
-			waitableTaskTrigegr.Invoke();
+			observer.Invoke();
 		}
 
 		void onFileSystemWatcherErrorEvent( object sender, SysIo.ErrorEventArgs e )
@@ -127,7 +140,7 @@ public sealed class CatoMain
 	{
 		// from Microsoft Learn
 		//     https://learn.microsoft.com/en-us/aspnet/core/fundamentals/websockets?view=aspnetcore-9.0
-		// an alternative, but very similar, implementation is here:
+		// an alternative but similar implementation is here:
 		//     https://www.tabsoverspaces.com/233883-simple-websocket-client-and-server-application-using-dotnet
 		AspBuilder.WebApplicationBuilder builder = AspBuilder.WebApplication.CreateBuilder( new AspBuilder.WebApplicationOptions() { WebRootPath = webRoot.Path } );
 		builder.WebHost.UseUrls( $"http://{hostName}:{portNumber}" );
@@ -174,9 +187,8 @@ public sealed class CatoMain
 			await runTransmitter( webSocket, awaitable );
 		}
 
-		// PEARL: a webSocket does not detect that it has been disconnected unless there is a read pending on it.
-		//     Thus, we have to have this method which keeps a pending read on the webSocket even though we have no
-		//     use for reading anything from it.
+		// PEARL: A webSocket does not detect that it has been disconnected unless there is a read pending on it.
+		//     So, we have to keep a pending read on the webSocket even though we do not care to read anything from it.
 		static async SysTask.Task runReceiver( SysNetWebSock.WebSocket webSocket )
 		{
 			byte[] buffer = new byte[16];

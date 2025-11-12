@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Magical incantations to enable unofficial bash strict mode, extended pattern matching, etc.
-set -euo pipefail
-shopt -s extglob
-# set -x
+set -e # magical incantation to immediately exit if any command has a non-zero exit status.
+set =u # magical incantation to mmediately exit if an undefined variable is referenced.
+set -o pipefail # magical incantation to prevent pipelines from masking errors. (Use `command1 | command2 || true` to mask.)
+shopt -s extglob # magical incantation to enable extended pattern matching.
+
+set -x # magical incantation to enable echoing of commands for troubleshooting.
 
 # PEARL: In GitHub, the output of `dotnet build` looks completely different from what it looks when building locally.
 #        For example, the output of "Message" tasks is not shown, even when "Importance" is set to "High".

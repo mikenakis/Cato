@@ -42,14 +42,21 @@
 
 		<!-- PEARL: For some entirely unfathomable and undocumented reason, the 'Branch' property that was set by the
 		     "UpdateBranchName" task does not exist here, so we have to re-create it and load its value from file. -->
-		<Branch>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../branch.txt").TrimEnd())</Branch>
 		<VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../version.txt').TrimEnd())</VersionPrefix>
+		<Branch>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../branch.txt").TrimEnd())</Branch>
 		<Snapshot>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../snapshot.txt").TrimEnd())</Snapshot>
-		<BranchOrBlank Condition="'$(Branch)'=='master'"></BranchOrBlank>
+
+		<!--<BranchOrBlank Condition="'$(Branch)'=='master'"></BranchOrBlank>
 		<BranchOrBlank Condition="'$(Branch)'!='master'">-$(Branch)</BranchOrBlank>
-		<BranchOrBlank Condition="'$(Branch)'==''">-no-branch</BranchOrBlank>
-		<VersionSuffix>$(BranchOrBlank)$(Snapshot)</VersionSuffix>
-		<InformationalVersion>$(VersionPrefix)$(VersionSuffix)</InformationalVersion>
+		<BranchOrBlank Condition="'$(Branch)'==''">-no-branch</BranchOrBlank>-->
+
+		<VersionSuffix Condition="'$(Branch)'=='' AND '$(Snapshot)'==''"></VersionSuffix>
+		<VersionSuffix Condition="'$(Branch)'=='' AND '$(Snapshot)'!=''">$(Snapshot)</VersionSuffix>
+		<VersionSuffix Condition="'$(Branch)'!='' AND '$(Snapshot)'==''">$(Branch)</VersionSuffix>
+		<VersionSuffix Condition="'$(Branch)'!='' AND '$(Snapshot)'!=''">$(Branch).$(Snapshot)</VersionSuffix>
+
+		<InformationalVersion>$(VersionPrefix)</InformationalVersion>
+		<InformationalVersion Condition="'$(VersionSuffix)'!=''">$(VersionPrefix)-$(VersionSuffix)</InformationalVersion>
 
 		<!-- PEARL: magical incantation to prevent a pile of garbage (a git commit hash) from being automagically
 		     appended to the assembly informational version. From https://stackoverflow.com/a/77051386/773113
@@ -108,9 +115,9 @@
 	<!-- *** Versioning ******************************************************************************************* -->
 
 	<ItemGroup>
-		<EmbeddedResource Include="../version.txt" />
-		<EmbeddedResource Include="../branch.txt" />
-		<EmbeddedResource Include="../snapshot.txt" />
+		<EmbeddedResource Include="../version.txt" WithCulture="false" />
+		<EmbeddedResource Include="../branch.txt" WithCulture="false" />
+		<EmbeddedResource Include="../snapshot.txt" WithCulture="false" />
 	</ItemGroup>
 
 	<!-- *** NuGet Packaging ************************************************************************************** -->

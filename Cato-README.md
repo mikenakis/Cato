@@ -6,8 +6,8 @@
 <img width="256" src="Cato-logo.svg" />
 </p>
 
-[![Build](https://github.com/mikenakis/Cato/actions/workflows/cicd-tool-auto.yml/badge.svg  )](https://github.com/mikenakis/Cato/actions/workflows/cicd-tool-auto.yml  )
-[![Build](https://github.com/mikenakis/Cato/actions/workflows/cicd-tool-manual.yml/badge.svg)](https://github.com/mikenakis/Cato/actions/workflows/cicd-tool-manual.yml)
+[![Build](https://github.com/mikenakis/Cato/actions/workflows/auto.yml/badge.svg  )](https://github.com/mikenakis/Cato/actions/workflows/auto.yml  )
+[![Build](https://github.com/mikenakis/Cato/actions/workflows/manual.yml/badge.svg)](https://github.com/mikenakis/Cato/actions/workflows/manual.yml)
 
 ### What does it do?
 

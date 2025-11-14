@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="VersioningTarget">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -8,8 +8,6 @@
 
 		<!-- Packing properties -->
 		<PackAsTool>True</PackAsTool>
-		<!--<ToolCommandName>SvgConvert</ToolCommandName>-->
-		<!--<PackageOutputPath>./nupkg</PackageOutputPath>-->
 
 		<!--PackageId: the default is $(MSBuildProjectName)-->
 		<!--<PackageId>$(AssemblyName)</PackageId>-->
@@ -26,15 +24,19 @@
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/mikenakis/Cato</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<PackageReleaseNotes>initial release</PackageReleaseNotes>
+		<PackageReleaseNotes></PackageReleaseNotes>
 		<IncludeSymbols Condition="'$(Configuration)' == 'Release'">True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-	</PropertyGroup>
+		<!-- PEARL: magical incantation to prevent a pile of garbage (a git commit hash) from being automagically
+		     appended to the assembly informational version. From https://stackoverflow.com/a/77051386/773113
+		     rumor has it that it is related to 'sourcelink', and it might in fact be necessary for sourcelink to
+			 work, so remember to disable sourcelink. -->
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
-	<ItemGroup>
-		<PackageReference Include="GitInfo" Version="3.6.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
-	</ItemGroup>
+		<!-- this will be overridden from the command-line -->
+		<PublicRelease>false</PublicRelease>
+	</PropertyGroup>
 
 	<Import Project="..\AllProjects.proj.xml" />
 	<Import Project="..\BannedApiAnalyzers.proj.xml" />
@@ -79,9 +81,46 @@
 		</Otherwise>
 	</Choose>
 
-	<!-- NuGet Packaging ******************************************************************************************* -->
+	<!-- *** Versioning ******************************************************************************************* -->
 
-	<!-- PEARL: this target is executed after pack, even though we say BeforeTargets="Pack" -->
+	<ItemGroup>
+		<EmbeddedResource Include="../version.txt" WithCulture="false" />
+	</ItemGroup>
+
+	<Target Name="VersioningTarget">
+		<Exec Command="git branch --show-current" ConsoleToMsBuild="True" StandardOutputImportance="Low">
+			<Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
+		</Exec>
+
+		<PropertyGroup>
+			<VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../version.txt').TrimEnd())</VersionPrefix>
+
+			<BranchOrBlank>$(Branch)</BranchOrBlank>
+			<BranchOrBlank Condition="'$(BranchOrBlank)' == 'master'"></BranchOrBlank>
+
+			<PreRelease>PreRelease</PreRelease>
+			<PreRelease Condition="'$(PublicRelease)' == 'true'"></PreRelease>
+
+			<VersionSuffix></VersionSuffix>
+
+			<VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(BranchOrBlank)' != ''">$(VersionSuffix).</VersionSuffix>
+			<VersionSuffix>$(VersionSuffix)$(BranchOrBlank)</VersionSuffix>
+
+			<VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(PreRelease)' != ''">$(VersionSuffix).</VersionSuffix>
+			<VersionSuffix>$(VersionSuffix)$(PreRelease)</VersionSuffix>
+
+			<Version>$(VersionPrefix)</Version>
+			<Version Condition="'$(VersionSuffix)' != ''">$(Version)-$(VersionSuffix)</Version>
+			<PackageVersion>$(Version)</PackageVersion>
+		</PropertyGroup>
+
+		<Message Importance="High" Text="VersionPrefix: '$(VersionPrefix)' VersionSuffix: '$(VersionSuffix)'" />
+	</Target>
+
+	<!-- *** NuGet Packaging ************************************************************************************** -->
+
+	<!-- PEARL: for some entirely unfathomable reason, this target is executed after pack, even though we say
+	     BeforeTargets="Pack" -->
 	<Target Name="CheckVersion" BeforeTargets="Pack">
 		<Message Importance="High" Text="PackageVersion = '$(PackageVersion)', Version = '$(Version)'" />
 		<Error Condition="'$(PackageVersion)' == '1.0.0'" Text="Version is 1.0.0" />

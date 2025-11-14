@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     # runs-on: windows-latest
 
-    # PEARL: If you try within a GitHub action to git-commit, you get a 403 permission denied error.
+    # PEARL: If you try within a GitHub action to git-push, you get a 403 permission denied error.
     #        The following fixes this problem.
     permissions:
       contents: write

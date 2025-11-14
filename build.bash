@@ -17,16 +17,16 @@ function increment_version()
 
 	IFS=. read -r major minor patch <<< "$version"
 	case "$part_to_increment" in
-		"major")
+		"increment_major")
 			major=$((major+1))
 			minor=0
 			patch=0
 			;;
-		"minor")
+		"increment_minor")
 			minor=$((minor+1))
 			patch=0
 			;;
-		"patch")
+		"increment_patch")
 			patch=$((patch+1))
 			;;
 		*)
@@ -34,58 +34,125 @@ function increment_version()
 			return 1 # does this cause the script to fail?
 	esac
 	printf "%s.%s.%s" "$major" "$minor" "$patch"
-	return 0
 }
 
-function increment_version_file_and_create_tag()
+function create_next_version()
 {
 	local part_to_increment=$1
+	local version=$2
 
-	local old_version=$(cat version.txt)
-	printf "old version: %s\n" "$old_version"
-	local new_version=$(increment_version "$part_to_increment" "$old_version")
-	printf "new version: %s\n" "$new_version"
-	printf "%s" "$new_version" > version.txt
+	local next_version=$(increment_version "$part_to_increment" "$version")
+	printf "old version: %s new version: %s\n" "$version" "$next_version"
+	printf "%s" "$next_version" > version.txt
 	git add version.txt
-	git tag "$new_version"
-	git commit --message="increment patch version from $old_version to $new_version"
-	return 0
+	git commit --message="increment version from $version to $next_version"
+}
+
+function write_and_commit_version_file()
+{
+	local version=$1
+	local next_version=$2
+
+	printf "old version: %s new version: %s\n" "$version" "$next_version"
+	printf "%s" "$next_version" > version.txt
+	git add version.txt
+	git commit --message="increment version from $version to $next_version"
 }
 
 function assert_no_untracked_files()
 {
-	untracked_files=$(git ls-files -o --directory --exclude-standard --no-empty-directory)
+	local untracked_files=$(git ls-files -o --directory --exclude-standard --no-empty-directory)
 	if [ "$untracked_files" != "" ]; then
 		echo "You have untracked files:"
 		echo $untracked_files
 		echo "Please add, stage, and commit first."
 		return 1
 	fi
-	return 0
 }
 
 function assert_no_tracked_but_unstaged_changes()
 {
-	unstaged_files=$(git diff-files --name-only)
+	local unstaged_files=$(git diff-files --name-only)
 	if [ "$unstaged_files" != "" ]; then
 		echo "You have tracked but unstanged changes:"
 		echo $unstaged_files
 		echo "Please stage and commit first."
 		return 1
 	fi
-	return 0
 }
 
 function assert_no_staged_but_uncommitted_changes()
 {
-	uncommitted_files=$(git diff-index --name-only --cached HEAD)
+	local uncommitted_files=$(git diff-index --name-only --cached HEAD)
 	if [ "$uncommitted_files" != "" ]; then
 		echo "You have staged but uncommitted changes:"
 		echo $uncommitted_files
 		echo "Please unstage or commit first."
 		return 1
 	fi
-	return 0
+}
+
+function remove_quietly()
+{
+	local file=$1
+	if [ -f "$file" ]; then
+		rm "$file"
+	fi
+}
+
+function command_auto_output_type_tool()
+{
+	dotnet test -check --configuration Debug --verbosity normal
+	remove_quietly ${project_name}/bin/Release/*.nupkg
+	dotnet pack -check --configuration Release --property:PublicRelease=true
+	dotnet nuget push ${project_name}/bin/Release/*.nupkg --source https://nuget.pkg.github.com/MikeNakis/index.json --api-key ${github_packages_nuget_api_key}
+}
+
+function command_manual_output_type_tool()
+{
+	remove_quietly ${project_name}/bin/Release/*.nupkg
+	dotnet pack -check --configuration Release --property:PublicRelease=true
+	dotnet nuget push ${project_name}/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${nuget_org_nuget_api_key}
+}
+
+function command_auto()
+{
+	assert_no_staged_but_uncommitted_changes
+
+	case "$output_type" in
+		"tool")
+			command_auto_output_type_tool
+			;;
+		*)
+			printf "%s: Invalid argument: '%s'\n" "$0" "$1"
+			exit 1
+	esac
+
+	local version=$(cat version.txt)
+	git tag "$version"
+	create_next_version increment_patch $version
+	printf "Pushing...\n"
+	git push origin HEAD --tags
+}
+
+function command_manual()
+{
+	assert_no_staged_but_uncommitted_changes
+
+	case "$output_type" in
+		"tool")
+			command_manual_output_type_tool
+			;;
+		*)
+			printf "%s: Invalid argument: '%s'\n" "$0" "$1"
+			exit 1
+	esac
+
+	local version=$(cat version.txt)
+	git tag "$version"
+	create_next_version increment_patch $version
+	printf "Pushing...\n"
+	git push origin HEAD --tags
 }
 
 while [ $# -gt 0 ]; do
@@ -111,69 +178,6 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
-
-function remove_quietly()
-{
-	local file=$1
-	if [ -f "$file" ]; then
-		rm "$file"
-	fi
-}
-
-function command_auto_output_type_tool()
-{
-	dotnet test -check --configuration Debug --verbosity normal
-	remove_quietly ${project_name}/bin/Release/*.nupkg
-	dotnet pack -check --configuration Release --property:PublicRelease=true
-	dotnet nuget push ${project_name}/bin/Release/*.nupkg --source https://nuget.pkg.github.com/MikeNakis/index.json --api-key ${github_packages_nuget_api_key}
-	return 0
-}
-
-function command_manual_output_type_tool()
-{
-	remove_quietly ${project_name}/bin/Release/*.nupkg
-	dotnet pack -check --configuration Release --property:PublicRelease=true
-	dotnet nuget push ${project_name}/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${nuget_org_nuget_api_key}
-	return 0
-}
-
-function command_auto()
-{
-	assert_no_staged_but_uncommitted_changes
-	increment_version_file_and_create_tag "patch"
-
-	case "$output_type" in
-		"tool")
-			command_auto_output_type_tool
-			;;
-		*)
-			printf "%s: Invalid argument: '%s'\n" "$0" "$1"
-			exit 1
-	esac
-
-	# git push
-	# git push origin "$version"
-	git push origin HEAD --tags
-}
-
-function command_manual()
-{
-	assert_no_staged_but_uncommitted_changes
-	increment_version_file_and_create_tag "minor"
-
-	case "$output_type" in
-		"tool")
-			command_manual_output_type_tool
-			;;
-		*)
-			printf "%s: Invalid argument: '%s'\n" "$0" "$1"
-			exit 1
-	esac
-
-	# git push
-	# git push origin "$version"
-	git push origin HEAD --tags
-}
 
 case "$command" in
 	"auto")

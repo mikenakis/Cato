@@ -1,12 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk" InitialTargets="UpdateBranchName">
-
-	<Target Name="UpdateBranchName"> <!-- BeforeTargets="ResolveReferences" -->
-		<Exec Command="git branch --show-current" ConsoleToMsBuild="True" StandardOutputImportance="Low">
-			<Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
-		</Exec>
-		<WriteLinesToFile File="$(MSBuildProjectDirectory)/../branch.txt" Overwrite="true" Lines="$(Branch)" />
-		<Message Importance="High" Text="Branch: '$(Branch)'" />
-	</Target>
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="VersioningTarget">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -16,8 +8,6 @@
 
 		<!-- Packing properties -->
 		<PackAsTool>True</PackAsTool>
-		<!--<ToolCommandName>SvgConvert</ToolCommandName>-->
-		<!--<PackageOutputPath>./nupkg</PackageOutputPath>-->
 
 		<!--PackageId: the default is $(MSBuildProjectName)-->
 		<!--<PackageId>$(AssemblyName)</PackageId>-->
@@ -38,39 +28,18 @@
 		<IncludeSymbols Condition="'$(Configuration)' == 'Release'">True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-		<!--<GenerateAssemblyInfo>False</GenerateAssemblyInfo>-->
-
-		<!-- PEARL: For some entirely unfathomable and undocumented reason, the 'Branch' property that was set by the
-		     "UpdateBranchName" task does not exist here, so we have to re-create it and load its value from file. -->
-		<VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../version.txt').TrimEnd())</VersionPrefix>
-		<Branch>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../branch.txt").TrimEnd())</Branch>
-		<Snapshot>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../snapshot.txt").TrimEnd())</Snapshot>
-
-		<!--<BranchOrBlank Condition="'$(Branch)'=='master'"></BranchOrBlank>
-		<BranchOrBlank Condition="'$(Branch)'!='master'">-$(Branch)</BranchOrBlank>
-		<BranchOrBlank Condition="'$(Branch)'==''">-no-branch</BranchOrBlank>-->
-
-		<VersionSuffix Condition="'$(Branch)'=='' AND '$(Snapshot)'==''"></VersionSuffix>
-		<VersionSuffix Condition="'$(Branch)'=='' AND '$(Snapshot)'!=''">$(Snapshot)</VersionSuffix>
-		<VersionSuffix Condition="'$(Branch)'!='' AND '$(Snapshot)'==''">$(Branch)</VersionSuffix>
-		<VersionSuffix Condition="'$(Branch)'!='' AND '$(Snapshot)'!=''">$(Branch).$(Snapshot)</VersionSuffix>
-
-		<InformationalVersion>$(VersionPrefix)</InformationalVersion>
-		<InformationalVersion Condition="'$(VersionSuffix)'!=''">$(VersionPrefix)-$(VersionSuffix)</InformationalVersion>
-
 		<!-- PEARL: magical incantation to prevent a pile of garbage (a git commit hash) from being automagically
 		     appended to the assembly informational version. From https://stackoverflow.com/a/77051386/773113
 		     rumor has it that it is related to 'sourcelink', and it might in fact be necessary for sourcelink to
 			 work, so remember to disable sourcelink. -->
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+		<!-- this will be overridden from the command-line -->
+		<PublicRelease>false</PublicRelease>
 	</PropertyGroup>
 
 	<Import Project="..\AllProjects.proj.xml" />
 	<Import Project="..\BannedApiAnalyzers.proj.xml" />
-
-	<Target Name="Verify Branch Name" BeforeTargets="Build">
-		<Error Condition="'$(Branch)'==''" Text="AAAAAAAAAAAA" />
-	</Target>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -116,9 +85,37 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="../version.txt" WithCulture="false" />
-		<EmbeddedResource Include="../branch.txt" WithCulture="false" />
-		<EmbeddedResource Include="../snapshot.txt" WithCulture="false" />
 	</ItemGroup>
+
+	<Target Name="VersioningTarget">
+		<Exec Command="git branch --show-current" ConsoleToMsBuild="True" StandardOutputImportance="Low">
+			<Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
+		</Exec>
+
+		<PropertyGroup>
+			<VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../version.txt').TrimEnd())</VersionPrefix>
+
+			<BranchOrBlank>$(Branch)</BranchOrBlank>
+			<BranchOrBlank Condition="'$(BranchOrBlank)' == 'master'"></BranchOrBlank>
+
+			<PreRelease>PreRelease</PreRelease>
+			<PreRelease Condition="'$(PublicRelease)' == 'true'"></PreRelease>
+
+			<VersionSuffix></VersionSuffix>
+
+			<VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(BranchOrBlank)' != ''">$(VersionSuffix).</VersionSuffix>
+			<VersionSuffix>$(VersionSuffix)$(BranchOrBlank)</VersionSuffix>
+
+			<VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(PreRelease)' != ''">$(VersionSuffix).</VersionSuffix>
+			<VersionSuffix>$(VersionSuffix)$(PreRelease)</VersionSuffix>
+
+			<Version>$(VersionPrefix)</Version>
+			<Version Condition="'$(VersionSuffix)' != ''">$(Version)-$(VersionSuffix)</Version>
+			<PackageVersion>$(Version)</PackageVersion>
+		</PropertyGroup>
+
+		<Message Importance="High" Text="VersionPrefix: '$(VersionPrefix)' VersionSuffix: '$(VersionSuffix)'" />
+	</Target>
 
 	<!-- *** NuGet Packaging ************************************************************************************** -->
 

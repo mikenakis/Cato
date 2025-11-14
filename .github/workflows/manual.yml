@@ -1,10 +1,6 @@
-name: build
+# name: build-manual
 
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+on: workflow_dispatch
 
 jobs:
 
@@ -13,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     # runs-on: windows-latest
 
+    # PEARL: If you try within a GitHub action to git-push, you get 403 permission denied errors.
+    #        The following fixes this problem.
     permissions:
       contents: write
 
@@ -30,13 +28,22 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+      # PEARL: If you try within a GitHub action to perform any git operation that relies on the history of the
+      #        repository being present, that operation will fail. The following fixes this problem.
     - name: Unshallow
       run: git fetch --prune --unshallow
+
+      # PEARL: If you try within a GitHub action to git-commit, you get an "Author identity unknown" error.
+      #        The following fixes this problem.
+    - name: Identify
+      run: |
+        git config user.email "${{ github.actor }}@github.com"
+        git config user.name "${{ github.actor }}"
 
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.200
 
-    - name: Execute script for the rest
-      run: bash cicd.bash Command=auto   OutputType=tool ProjectName=${{ github.event.repository.name }} GitHubPackagesNuGetApiKey=${{ secrets.MY_GITHUB_TOKEN }} NugetOrgNuGetApiKey=${{ secrets.NUGET_API_KEY }}
+    - name: Launch build script.
+      run: bash build.bash Command=manual OutputType=tool ProjectName=${{ github.event.repository.name }} GitHubPackagesNuGetApiKey=${{ secrets.MY_GITHUB_TOKEN }} NuGetOrgNuGetApiKey=${{ secrets.NUGET_API_KEY }}

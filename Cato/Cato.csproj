@@ -83,10 +83,6 @@
 
 	<!-- *** Versioning ******************************************************************************************* -->
 
-	<ItemGroup>
-		<EmbeddedResource Include="../version.txt" WithCulture="false" />
-	</ItemGroup>
-
 	<Target Name="VersioningTarget">
 		<Exec Command="git branch --show-current" ConsoleToMsBuild="True" StandardOutputImportance="Low">
 			<Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
@@ -127,9 +123,11 @@
 	</Target>
 
 	<ItemGroup>
-		<None Include="..\LICENSE.md" Pack="True" PackagePath="/" />
-		<None Include="..\Cato-Logo.png" Pack="True" PackagePath="/" />
-		<None Include="README-for-nuget.md" Pack="True" PackagePath="/README.md" />
+		<!-- PEARL: Visual Studio will show these items in "Solution Explorer", as if they are in the project directory,
+		    even though they are NOT. The "Visuble=false" magical incantation is necessary to prevent this. -->
+		<None Include="..\LICENSE.md" Pack="True" PackagePath="/" Visible="false" />
+		<None Include="..\Cato-Logo.png" Pack="True" PackagePath="/" Visible="false" />
+		<None Include="..\README-for-nuget.md" Pack="True" PackagePath="/README.md" Visible="false" />
 	</ItemGroup>
 
 </Project>

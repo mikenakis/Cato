@@ -102,7 +102,7 @@ function remove_quietly()
 
 function command_auto_output_type_tool()
 {
-	dotnet test -check --configuration Debug --verbosity normal
+	dotnet test -check --configuration Debug --verbosity minimal
 	remove_quietly ${project_name}/bin/Release/*.nupkg
 	dotnet pack -check --configuration Release --property:PublicRelease=true
 	dotnet nuget push ${project_name}/bin/Release/*.nupkg --source https://nuget.pkg.github.com/MikeNakis/index.json --api-key ${github_packages_nuget_api_key}

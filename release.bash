@@ -89,15 +89,18 @@ function run()
 	esac
 	printf -v next_version "%s.%s.%s-PreRelease" "$new_major" "$new_minor" "$new_patch"
 
-	echo "Previous version: $previous_version"
-	echo "Current version: $current_version"
-	echo "Next version: $next_version"
+	info "Previous version: $previous_version"
+	info "Current version:  $current_version"
+	info "Next version:     $next_version"
 
 	[[ $dry_run == true ]] && return
 
 	printf "$current_version" >| "$version_file_pathname"
+	info git add:
 	git add "$version_file_pathname"
+	info git tag:
 	git tag "$current_version"
+	info git commit:
 	git commit --message="Release of version $current_version"
 	info "Pushing current version and tag..."
 	git push origin HEAD --tags
@@ -106,9 +109,11 @@ function run()
 	# sleep 10s
 
 	printf "$next_version" >| "$version_file_pathname"
+	info git add:
 	git add "$version_file_pathname"
 	# PEARL: Still as of 2025 GitHub does not support `git push -o ci.skip`. So, we have to use `[skip ci]` in the
 	#    commit message, which is the only thing that works on both GitHub and GitLab.
+	info git commit:
 	git commit --message="Increment version to $next_version [skip ci]"
 	info "Pushing next version..."
 	git push origin HEAD

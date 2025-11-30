@@ -6,8 +6,7 @@
 <img width="256" src="Cato-logo.svg" />
 </p>
 
-[![Build](https://github.com/mikenakis/Cato/actions/workflows/auto.yml/badge.svg  )](https://github.com/mikenakis/Cato/actions/workflows/auto.yml  )
-[![Build](https://github.com/mikenakis/Cato/actions/workflows/manual.yml/badge.svg)](https://github.com/mikenakis/Cato/actions/workflows/manual.yml)
+[![Build](https://github.com/mikenakis/Cato/actions/workflows/continuous-integration.yml/badge.svg  )](https://github.com/mikenakis/Cato/actions/workflows/continuous-integration.yml  )
 
 ### What does it do?
 

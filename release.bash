@@ -96,27 +96,22 @@ function run()
 	[[ $dry_run == true ]] && return
 
 	printf "$current_version" >| "$version_file_pathname"
-	info git add:
 	git add "$version_file_pathname"
-	info git tag:
 	git tag "$current_version"
-	info git commit:
-	git commit --message="Release of version $current_version"
+	git commit --quiet --message="Release of version $current_version"
 	info "Pushing current version and tag..."
-	git push origin HEAD --tags
+	git push --quiet origin HEAD --tags
 
 	# info "Waiting for a few seconds..."
 	# sleep 10s
 
 	printf "$next_version" >| "$version_file_pathname"
-	info git add:
 	git add "$version_file_pathname"
 	# PEARL: Still as of 2025 GitHub does not support `git push -o ci.skip`. So, we have to use `[skip ci]` in the
 	#    commit message, which is the only thing that works on both GitHub and GitLab.
-	info git commit:
-	git commit --message="Increment version to $next_version [skip ci]"
+	git commit --quiet --message="Increment version to $next_version [skip ci]"
 	info "Pushing next version..."
-	git push origin HEAD
+	git push --quiet origin HEAD
 }
 
 run $@

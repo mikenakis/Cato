@@ -76,9 +76,10 @@ sealed class MyFileProvider : AspFileProviders.IFileProvider, Sys.IDisposable
 
 		public long Length => content.Length;
 
-		// PEARL: A return value of 'null' is undocumented to mean that the file is "not directly accessible", which is a mystifying enigma.
-		//     Undocumentedly, it means that CreateReadStream() should be invoked.
-		//     If a non-null value is returned, then asp.net will, undocumentedly, drectly fetch the file on its own, without invoking CreateReadStream().
+		// PEARL: A return value of 'null' is documented to mean that the file is "not directly accessible", which is
+		//     a mystifying enigma.  Undocumentedly, it means that CreateReadStream() should be invoked.
+		//     If a non-null value is returned, then asp.net will, undocumentedly, drectly fetch the file on its own,
+		//     without invoking CreateReadStream().
 		public string? PhysicalPath => null;
 
 		public string Name => delegee.Name;

@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
+		<LangVersion>13</LangVersion>
 		<Configurations>Debug;Release</Configurations>
 		<OutputType>Exe</OutputType>
 		<ApplicationIcon>Cato.ico</ApplicationIcon>

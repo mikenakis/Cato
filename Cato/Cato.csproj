@@ -68,7 +68,7 @@
 		</When>
 		<Otherwise>
 			<ItemGroup>
-				<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="5.0.*" PrivateAssests="All" />
+				<PackageReference Include="MikeNakis.Clio-$(PackagesConfiguration)" Version="6.3.0" PrivateAssests="All" />
 			</ItemGroup>
 		</Otherwise>
 	</Choose>
